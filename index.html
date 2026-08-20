@@ -345,6 +345,7 @@
 
         function fotoTomada() {
             const file = document.getElementById('camera').files[0];
+            if(!file) return;
             const reader = new FileReader();
             reader.onloadend = function() {
                 base64Img = reader.result;
