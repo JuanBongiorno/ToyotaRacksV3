@@ -320,6 +320,7 @@
 
         window.addEventListener('online', sincronizarPendientes);
         window.addEventListener('offline', () => actualizarEstado('Sin señal: reportes en espera', '#ffcc00'));
+        setInterval(sincronizarPendientes, 30000);
         sincronizarPendientes();
 
         setInterval(() => {
@@ -383,8 +384,8 @@
                 vacios,
                 sector,
                 lugar,
-                observaciones: document.getElementById('obs').value,
                 operador: nombreOperador,
+                observaciones: document.getElementById('obs').value,
                 imagen: base64Img
             };
 
