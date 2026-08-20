@@ -6,26 +6,25 @@
     <title>Suragua Pro - Control de Racks</title>
     <style>
         :root {
-            --neon-blue: #00f2ff;
-            --deep-blue: #020d1a;
-            --card-bg: rgba(7, 18, 30, 0.97); 
-            --input-dark: rgba(25, 45, 70, 0.8); /* Azul oscuro más sólido */
-            --accent-grad: linear-gradient(135deg, #00d4ff 0%, #0072ff 100%);
+            --navy: #0b2d4d;
+            --navy-deep: #061b31;
+            --sky: #35b9e8;
+            --sky-light: #e8f7ff;
+            --card-bg: rgba(255, 255, 255, 0.97);
+            --input-bg: #ffffff;
+            --accent-grad: linear-gradient(135deg, #0b2d4d 0%, #147fb5 100%);
         }
 
         body {
             margin: 0;
             padding: 20px;
             font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-            background: linear-gradient(rgba(2, 13, 26, 0.7), rgba(2, 13, 26, 0.8)),
-                        url('./akira-hojo-ZxGdri2EWzk-unsplash (1).jpg');
-            background-size: cover;
-            background-attachment: fixed;
+            background: linear-gradient(135deg, #ffffff 0%, #e8f7ff 55%, #c9ebfa 100%);
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            color: white;
+            color: var(--navy);
             overflow-x: hidden;
         }
 
@@ -34,19 +33,19 @@
             max-width: 380px;
             padding: 50px 45px;
             border-radius: 30px;
-            border: 1px solid rgba(0, 242, 255, 0.25);
+            border: 1px solid rgba(53, 185, 232, 0.45);
             background: var(--card-bg);
-            box-shadow: 0 25px 80px rgba(0,0,0,0.9), inset 0 0 30px rgba(0, 242, 255, 0.05);
+            box-shadow: 0 25px 80px rgba(11, 45, 77, 0.2), inset 0 0 30px rgba(53, 185, 232, 0.08);
             backdrop-filter: blur(30px);
             text-align: center;
             position: relative;
             transition: all 0.4s ease;
         }
 
-        .logo { width: 160px; margin-bottom: 15px; filter: drop-shadow(0 0 10px rgba(0, 242, 255, 0.4)); }
+        .logo { width: 160px; margin-bottom: 15px; filter: drop-shadow(0 0 10px rgba(53, 185, 232, 0.35)); }
         
         h2 { 
-            color: var(--neon-blue); 
+            color: var(--navy);
             font-size: 16px; 
             letter-spacing: 4px; 
             text-transform: uppercase; 
@@ -57,24 +56,24 @@
         .timestamp { 
             font-size: 16px; 
             margin-bottom: 30px; 
-            color: #ffffff;
+            color: var(--navy);
             font-weight: 600;
             letter-spacing: 0.5px;
         }
 
         .group { text-align: left; margin-bottom: 25px; }
-        label { font-size: 12px; color: #00d4ff; font-weight: 800; text-transform: uppercase; margin-bottom: 10px; display: block; letter-spacing: 1px; }
+        label { font-size: 12px; color: var(--navy); font-weight: 800; text-transform: uppercase; margin-bottom: 10px; display: block; letter-spacing: 1px; }
 
         /* AJUSTE PARA QUE LOS INPUTS SEAN SIEMPRE AZUL OSCURO Y NO BLANCO */
         input, textarea {
             width: 100%;
             padding: 16px;
             border-radius: 12px;
-            border: 1px solid rgba(255,255,255,0.12);
+            border: 1px solid #a9d8ed;
             box-sizing: border-box;
             font-size: 15px;
-            background: var(--input-dark) !important; /* Forzado azul oscuro */
-            color: white !important;
+            background: var(--input-bg) !important;
+            color: var(--navy) !important;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
@@ -82,8 +81,8 @@
         input:-webkit-autofill,
         input:-webkit-autofill:hover, 
         input:-webkit-autofill:focus {
-            -webkit-text-fill-color: white !important;
-            -webkit-box-shadow: 0 0 0px 1000px #192d46 inset !important;
+            -webkit-text-fill-color: var(--navy) !important;
+            -webkit-box-shadow: 0 0 0px 1000px #ffffff inset !important;
             transition: background-color 5000s ease-in-out 0s;
         }
 
@@ -94,18 +93,18 @@
 
         input:focus, textarea:focus { 
             outline: none; 
-            border-color: var(--neon-blue); 
-            box-shadow: 0 0 20px rgba(0,242,255,0.3);
-            background: rgba(35, 60, 90, 0.9) !important;
+            border-color: var(--sky);
+            box-shadow: 0 0 20px rgba(53, 185, 232, 0.25);
+            background: #ffffff !important;
         }
 
         .row { display: flex; gap: 15px; }
         .col { flex: 1; }
 
         .btn-camera {
-            background: rgba(0, 242, 255, 0.03);
-            border: 1px dashed var(--neon-blue);
-            color: white;
+            background: var(--sky-light);
+            border: 1px dashed var(--sky);
+            color: var(--navy);
             padding: 18px;
             width: 100%;
             border-radius: 15px;
@@ -119,9 +118,9 @@
         }
 
         .btn-send {
-            background: #0088ff;
+            background: var(--accent-grad);
             border: none;
-            color: black;
+            color: white;
             font-weight: 900;
             padding: 22px;
             width: 100%;
@@ -130,16 +129,16 @@
             font-size: 16px;
             text-transform: uppercase;
             letter-spacing: 2px;
-            box-shadow: 0 8px 25px rgba(0, 136, 255, 0.5);
+            box-shadow: 0 8px 25px rgba(11, 45, 77, 0.25);
             transition: all 0.3s ease;
         }
 
-        hr { border: 0; border-top: 1px solid rgba(255,255,255,0.15); margin: 20px 0; }
+        hr { border: 0; border-top: 1px solid #c5e5f3; margin: 20px 0; }
 
         .op-display {
             font-size: 24px;
             font-weight: 900;
-            color: white;
+            color: var(--navy);
             text-align: left;
             margin-top: 8px;
             text-align: center;
@@ -147,7 +146,7 @@
 
         .toast {
             position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%);
-            background: #00f2ff; color: #001a33; padding: 18px 35px; border-radius: 50px;
+            background: var(--navy); color: white; padding: 18px 35px; border-radius: 50px;
             font-weight: 800; font-size: 15px; transition: 0.5s; z-index: 9999;
         }
         .toast.show { bottom: 30px; }
@@ -163,7 +162,7 @@
     <!-- PANTALLA LOGIN -->
     <div id="login-box" class="card">
         <img src="./Suragua-Logotipo-removebg-preview.png" class="logo">
-        <h2 style="color: #00f2ff; letter-spacing: 6px;">CONTROL RACKS</h2>
+        <h2 style="color: var(--navy); letter-spacing: 6px;">CONTROL RACKS</h2>
         <div class="group">
             <input type="text" id="u" placeholder="Usuario">
         </div>
@@ -180,7 +179,7 @@
         <hr>
         
         <div class="group">
-            <label style="color: #555;">FECHA Y HORA ACTUAL</label>
+            <label>FECHA Y HORA ACTUAL</label>
             <div class="timestamp" id="reloj">Cargando fecha...</div>
         </div>
         <div class="timestamp" id="estado-red" aria-live="polite">Sincronizado</div>
@@ -241,7 +240,7 @@
         let sincronizando = false;
 
         if ('serviceWorker' in navigator && window.isSecureContext) {
-            navigator.serviceWorker.register('./service-worker.js').catch(error => console.error('Service Worker:', error));
+            navigator.serviceWorker.register('./service-worker.js?v=2').catch(error => console.error('Service Worker:', error));
         }
 
         function abrirBaseDatos() {
@@ -350,8 +349,8 @@
             reader.onloadend = function() {
                 base64Img = reader.result;
                 const btn = document.getElementById('btn-foto');
-                btn.style.borderColor = "#00ffaa";
-                btn.style.color = "#00ffaa";
+                btn.style.borderColor = "var(--sky)";
+                btn.style.color = "var(--navy)";
                 document.getElementById('cam-text').innerText = "FOTO CAPTURADA ✓";
             }
             reader.readAsDataURL(file);
@@ -368,12 +367,21 @@
         function enviarDatos() {
             if(!base64Img) return alert("Falta capturar la foto obligatoria.");
 
+            const rack = document.getElementById('rack').value.trim();
+            const llenos = document.getElementById('llenos').value;
+            const vacios = document.getElementById('vacios').value;
+            const sector = document.getElementById('sector').value.trim();
+            const lugar = document.getElementById('lugar').value.trim();
+            if(!rack || llenos === '' || vacios === '' || !sector || !lugar) {
+                return alert("Completá rack, llenos, vacíos, sector y lugar antes de enviar.");
+            }
+
             const payload = {
-                rack: document.getElementById('rack').value,
-                llenos: document.getElementById('llenos').value,
-                vacios: document.getElementById('vacios').value,
-                sector: document.getElementById('sector').value,
-                lugar: document.getElementById('lugar').value,
+                rack,
+                llenos,
+                vacios,
+                sector,
+                lugar,
                 observaciones: document.getElementById('obs').value,
                 operador: nombreOperador,
                 imagen: base64Img
