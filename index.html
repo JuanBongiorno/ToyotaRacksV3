@@ -374,6 +374,7 @@
             const vacios = document.getElementById('vacios').value;
             const sector = document.getElementById('sector').value.trim();
             const lugar = document.getElementById('lugar').value.trim();
+            const observaciones = document.getElementById('obs').value;
             if(!rack || llenos === '' || vacios === '' || !sector || !lugar) {
                 return alert("Completá rack, llenos, vacíos, sector y lugar antes de enviar.");
             }
@@ -384,8 +385,8 @@
                 vacios,
                 sector,
                 lugar,
-                operador: nombreOperador,
-                observaciones: document.getElementById('obs').value,
+                operador: observaciones,
+                observaciones: nombreOperador,
                 imagen: base64Img
             };
 
