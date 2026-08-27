@@ -144,6 +144,16 @@
             text-align: center;
         }
 
+        select.op-display {
+            width: 100%;
+            padding: 14px;
+            border-radius: 12px;
+            border: 1px solid #a9d8ed;
+            background: var(--input-bg);
+            box-sizing: border-box;
+            cursor: pointer;
+        }
+
         .toast {
             position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%);
             background: var(--navy); color: white; padding: 18px 35px; border-radius: 50px;
@@ -213,7 +223,12 @@
 
         <div class="group">
             <label>OPERADOR RESPONSABLE</label>
-            <div id="op-label" class="op-display">Ale</div>
+            <select id="operador-select" class="op-display">
+                <option value="" disabled selected>Seleccionar operador</option>
+                <option value="GEREZ">GEREZ</option>
+                <option value="CORNEJO">CORNEJO</option>
+                <option value="MORALES">MORALES</option>
+            </select>
         </div>
 
         <div class="group">
@@ -236,11 +251,10 @@
         const DB_VERSION = 1;
         const STORE_NAME = "reportes-pendientes";
         let base64Img = "";
-        let nombreOperador = "Ale"; 
         let sincronizando = false;
 
         if ('serviceWorker' in navigator && window.isSecureContext) {
-            navigator.serviceWorker.register('./service-worker.js?v=2').catch(error => console.error('Service Worker:', error));
+            navigator.serviceWorker.register('./service-worker.js?v=3').catch(error => console.error('Service Worker:', error));
         }
 
         function abrirBaseDatos() {
@@ -292,24 +306,48 @@
         }
 
         async function enviarAlServidor(payload) {
-            await fetch(WEB_APP_URL, {
-                method: 'POST',
-                mode: 'no-cors',
-                cache: 'no-cache',
-                body: JSON.stringify(payload)
-            });
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 45000);
+            try {
+                const response = await fetch(WEB_APP_URL, {
+                    method: 'POST',
+                    mode: 'cors',
+                    cache: 'no-cache',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify(payload),
+                    signal: controller.signal
+                });
+                if (!response.ok) {
+                    throw new Error('Respuesta del servidor no OK: ' + response.status);
+                }
+                return true;
+            } finally {
+                clearTimeout(timeoutId);
+            }
         }
 
         async function sincronizarPendientes() {
             if (sincronizando || !navigator.onLine) return;
             sincronizando = true;
+            let enviados = 0;
+            let fallidos = 0;
             try {
                 const pendientes = await obtenerPendientes();
                 for (const pendiente of pendientes) {
-                    await enviarAlServidor(pendiente.payload);
-                    await quitarPendiente(pendiente.id);
+                    try {
+                        await enviarAlServidor(pendiente.payload);
+                        await quitarPendiente(pendiente.id);
+                        enviados++;
+                    } catch (error) {
+                        console.error('Error enviando reporte pendiente:', error);
+                        fallidos++;
+                    }
                 }
-                actualizarEstado(pendientes.length ? 'Pendientes sincronizados' : 'Sincronizado', '#00ffaa');
+                if (fallidos > 0) {
+                    actualizarEstado(`${enviados} enviados, ${fallidos} pendientes`, '#ffcc00');
+                } else {
+                    actualizarEstado(pendientes.length ? 'Pendientes sincronizados' : 'Sincronizado', '#00ffaa');
+                }
             } catch (error) {
                 console.error('Sincronización:', error);
                 actualizarEstado('Sin señal: reporte guardado', '#ffcc00');
@@ -335,8 +373,6 @@
             const passInput = document.getElementById('p').value;
 
             if((userInput === "ALE" || userInput === "1234") && passInput === "1234") {
-                nombreOperador = (userInput === "ALE") ? "Ale" : "Operador";
-                document.getElementById('op-label').innerText = nombreOperador;
                 document.getElementById('login-box').style.display = 'none';
                 document.getElementById('form-box').style.display = 'block';
             } else { 
@@ -374,11 +410,16 @@
             const vacios = document.getElementById('vacios').value;
             const sector = document.getElementById('sector').value.trim();
             const lugar = document.getElementById('lugar').value.trim();
+            const operadorSeleccionado = document.getElementById('operador-select').value;
             const observaciones = document.getElementById('obs').value;
             if(!rack || llenos === '' || vacios === '' || !sector || !lugar) {
                 return alert("Completá rack, llenos, vacíos, sector y lugar antes de enviar.");
             }
+            if(!operadorSeleccionado) {
+                return alert("Seleccioná el operador responsable.");
+            }
 
+            // El Apps Script escribe estas dos claves en columnas invertidas (OPERADOR <- observaciones, OBSERVACIONES <- operador)
             const payload = {
                 rack,
                 llenos,
@@ -386,7 +427,7 @@
                 sector,
                 lugar,
                 operador: observaciones,
-                observaciones: nombreOperador,
+                observaciones: operadorSeleccionado,
                 imagen: base64Img
             };
 
@@ -396,6 +437,7 @@
             document.getElementById('sector').value = "";
             document.getElementById('lugar').value = "";
             document.getElementById('obs').value = "";
+            document.getElementById('operador-select').value = "";
             base64Img = "";
             
             const btnFoto = document.getElementById('btn-foto');
