@@ -1,4 +1,4 @@
-const CACHE_NAME = 'suragua-pro-v3';
+const CACHE_NAME = 'suragua-pro-v4';
 const APP_FILES = [
     './',
     './index.html',

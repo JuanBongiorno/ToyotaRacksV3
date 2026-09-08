@@ -246,7 +246,7 @@
     </div>
 
     <script>
-        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzHD8kSEqNOPxwDpnkYz9x6kk90RENW-ZMpejVnIV1qPclbWJO8I0Fn7AOTfCdepBpPag/exec";
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbydGR9bmqtlqMQq33bh6MBBkc_eKqAhyx4j_1-EP41nqAIYKf2bDW-j8cAeLZ-g6PgXxQ/exec";
         const DB_NAME = "suragua-offline";
         const DB_VERSION = 1;
         const STORE_NAME = "reportes-pendientes";
@@ -254,7 +254,7 @@
         let sincronizando = false;
 
         if ('serviceWorker' in navigator && window.isSecureContext) {
-            navigator.serviceWorker.register('./service-worker.js?v=3').catch(error => console.error('Service Worker:', error));
+            navigator.serviceWorker.register('./service-worker.js?v=4').catch(error => console.error('Service Worker:', error));
         }
 
         function abrirBaseDatos() {
@@ -313,17 +313,42 @@
                     method: 'POST',
                     mode: 'cors',
                     cache: 'no-cache',
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    headers: { 'Content-Type': 'application/json;charset=utf-8' },
                     body: JSON.stringify(payload),
                     signal: controller.signal
                 });
+
+                const respuestaTexto = await response.text();
                 if (!response.ok) {
-                    throw new Error('Respuesta del servidor no OK: ' + response.status);
+                    throw new Error('Respuesta del servidor no OK: ' + response.status + ' - ' + respuestaTexto);
                 }
+
+                console.log('Respuesta Apps Script:', respuestaTexto);
                 return true;
             } finally {
                 clearTimeout(timeoutId);
             }
+        }
+
+        async function limpiarDuplicadosPendientes() {
+            const pendientes = await obtenerPendientes();
+            const vistos = new Set();
+            const duplicados = [];
+
+            for (const pendiente of pendientes) {
+                const clave = getReporteFingerprint(pendiente.payload);
+                if (vistos.has(clave)) {
+                    duplicados.push(pendiente.id);
+                    continue;
+                }
+                vistos.add(clave);
+            }
+
+            for (const id of duplicados) {
+                await quitarPendiente(id);
+            }
+
+            return pendientes.filter((pendiente) => !duplicados.includes(pendiente.id));
         }
 
         async function sincronizarPendientes() {
@@ -332,7 +357,7 @@
             let enviados = 0;
             let fallidos = 0;
             try {
-                const pendientes = await obtenerPendientes();
+                const pendientes = await limpiarDuplicadosPendientes();
                 for (const pendiente of pendientes) {
                     try {
                         await enviarAlServidor(pendiente.payload);
@@ -402,6 +427,37 @@
             setTimeout(() => t.classList.remove('show'), 4000);
         }
 
+        function getReporteFingerprint(payload) {
+            return String(payload.rack || '').trim().toUpperCase();
+        }
+
+        async function guardarPendiente(payload) {
+            const db = await abrirBaseDatos();
+            const pendientes = await new Promise((resolve, reject) => {
+                const request = db.transaction(STORE_NAME).objectStore(STORE_NAME).getAll();
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
+
+            const yaExiste = pendientes.some((pendiente) => {
+                return getReporteFingerprint(pendiente.payload) === getReporteFingerprint(payload);
+            });
+
+            if (yaExiste) {
+                db.close();
+                return false;
+            }
+
+            await new Promise((resolve, reject) => {
+                const transaction = db.transaction(STORE_NAME, 'readwrite');
+                transaction.objectStore(STORE_NAME).put({ id: crypto.randomUUID(), payload });
+                transaction.oncomplete = resolve;
+                transaction.onerror = () => reject(transaction.error);
+            });
+            db.close();
+            return true;
+        }
+
         function enviarDatos() {
             if(!base64Img) return alert("Falta capturar la foto obligatoria.");
 
@@ -418,6 +474,12 @@
             if(!operadorSeleccionado) {
                 return alert("Seleccioná el operador responsable.");
             }
+
+            const btnEnviar = document.getElementById('btn-final');
+            if (btnEnviar.disabled) return;
+            btnEnviar.disabled = true;
+            btnEnviar.style.opacity = '0.7';
+            btnEnviar.innerText = 'ENVIANDO...';
 
             // El Apps Script escribe estas dos claves en columnas invertidas (OPERADOR <- observaciones, OBSERVACIONES <- operador)
             const payload = {
@@ -444,7 +506,11 @@
             btnFoto.classList.remove('ready');
             document.getElementById('cam-text').innerText = "CAPTURAR FOTO";
 
-            guardarPendiente(payload).then(() => {
+            guardarPendiente(payload).then((guardado) => {
+                if (!guardado) {
+                    mostrarToast("Este reporte ya estaba guardado", "#ffcc00");
+                    return;
+                }
                 if (!navigator.onLine) {
                     actualizarEstado('Sin señal: reporte en espera', '#ffcc00');
                     mostrarToast("✓ Guardado para enviar luego", "#ffcc00");
@@ -455,6 +521,10 @@
             }).catch(error => {
                 console.error("Error al guardar:", error);
                 mostrarToast("⚠ No se pudo guardar el reporte", "#ff4444");
+            }).finally(() => {
+                btnEnviar.disabled = false;
+                btnEnviar.style.opacity = '1';
+                btnEnviar.innerText = 'ENVIAR REPORTE';
             });
         }
     </script>
