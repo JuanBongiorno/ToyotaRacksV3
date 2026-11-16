@@ -266,17 +266,6 @@
             });
         }
 
-        async function guardarPendiente(payload) {
-            const db = await abrirBaseDatos();
-            await new Promise((resolve, reject) => {
-                const transaction = db.transaction(STORE_NAME, 'readwrite');
-                transaction.objectStore(STORE_NAME).put({ id: crypto.randomUUID(), payload });
-                transaction.oncomplete = resolve;
-                transaction.onerror = () => reject(transaction.error);
-            });
-            db.close();
-        }
-
         async function obtenerPendientes() {
             const db = await abrirBaseDatos();
             const pendientes = await new Promise((resolve, reject) => {
@@ -313,7 +302,7 @@
                     method: 'POST',
                     mode: 'cors',
                     cache: 'no-cache',
-                    headers: { 'Content-Type': 'application/json;charset=utf-8' },
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                     body: JSON.stringify(payload),
                     signal: controller.signal
                 });
@@ -330,34 +319,13 @@
             }
         }
 
-        async function limpiarDuplicadosPendientes() {
-            const pendientes = await obtenerPendientes();
-            const vistos = new Set();
-            const duplicados = [];
-
-            for (const pendiente of pendientes) {
-                const clave = getReporteFingerprint(pendiente.payload);
-                if (vistos.has(clave)) {
-                    duplicados.push(pendiente.id);
-                    continue;
-                }
-                vistos.add(clave);
-            }
-
-            for (const id of duplicados) {
-                await quitarPendiente(id);
-            }
-
-            return pendientes.filter((pendiente) => !duplicados.includes(pendiente.id));
-        }
-
         async function sincronizarPendientes() {
-            if (sincronizando || !navigator.onLine) return;
+            if (sincronizando || !navigator.onLine) return false;
             sincronizando = true;
             let enviados = 0;
             let fallidos = 0;
             try {
-                const pendientes = await limpiarDuplicadosPendientes();
+                const pendientes = await obtenerPendientes();
                 for (const pendiente of pendientes) {
                     try {
                         await enviarAlServidor(pendiente.payload);
@@ -373,9 +341,11 @@
                 } else {
                     actualizarEstado(pendientes.length ? 'Pendientes sincronizados' : 'Sincronizado', '#00ffaa');
                 }
+                return fallidos === 0;
             } catch (error) {
                 console.error('Sincronización:', error);
                 actualizarEstado('Sin señal: reporte guardado', '#ffcc00');
+                return false;
             } finally {
                 sincronizando = false;
             }
@@ -427,27 +397,8 @@
             setTimeout(() => t.classList.remove('show'), 4000);
         }
 
-        function getReporteFingerprint(payload) {
-            return String(payload.rack || '').trim().toUpperCase();
-        }
-
         async function guardarPendiente(payload) {
             const db = await abrirBaseDatos();
-            const pendientes = await new Promise((resolve, reject) => {
-                const request = db.transaction(STORE_NAME).objectStore(STORE_NAME).getAll();
-                request.onsuccess = () => resolve(request.result);
-                request.onerror = () => reject(request.error);
-            });
-
-            const yaExiste = pendientes.some((pendiente) => {
-                return getReporteFingerprint(pendiente.payload) === getReporteFingerprint(payload);
-            });
-
-            if (yaExiste) {
-                db.close();
-                return false;
-            }
-
             await new Promise((resolve, reject) => {
                 const transaction = db.transaction(STORE_NAME, 'readwrite');
                 transaction.objectStore(STORE_NAME).put({ id: crypto.randomUUID(), payload });
@@ -517,7 +468,13 @@
                     return;
                 }
                 mostrarToast("Enviando en segundo plano...", "#00f2ff");
-                sincronizarPendientes().then(() => mostrarToast("✓ Enviado con éxito", "#00ffaa"));
+                sincronizarPendientes().then((enviado) => {
+                    if (enviado) {
+                        mostrarToast("✓ Enviado con éxito", "#00ffaa");
+                    } else {
+                        mostrarToast("Reporte guardado; queda pendiente de sincronización", "#ffcc00");
+                    }
+                });
             }).catch(error => {
                 console.error("Error al guardar:", error);
                 mostrarToast("⚠ No se pudo guardar el reporte", "#ff4444");
